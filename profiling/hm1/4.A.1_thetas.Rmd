@@ -1,42 +1,12 @@
 ---
-title: "NGS simulation and diversity calculation"
-author: "Jinliang Yang"
-date: "01-29-2020"
+title: "Homework1"
+author: "Zhikai Yang"
+date: "02-16-2020"
 output: html_notebook
 ---
 
 
-# Syncing your fork to the original repo 
 
-1. Open your __fork__ of the repository on Github
-2. Click the __Compare__ button right next to the __Pull request__
-3. Change the __base repo__ to your repository
-  - You're now back to your fork but you've also asked to compare two identical repositories so GitHub thinks you care about branches not forks. 
-  - Click on __compare across forks__ to get back your base fork option.
-4. Change the __head repo__ to the upstream (original) repository __jyanglab/agro932-lab__
-5. You will see a list of commits
-  - These are the commits made by `yangjl`
-6. Click __Create pull request__
-  - Note that this pull request is to you!
-  
-
----
-
-# Unix Commands
-
-- `cd`: change the working directory
-- `mkdir`: make directories
-- `pwd`: print name of current working directory
-- `ls`: list directory contents
-- `chmod`: change the access permissions to files and directories
-- `head`: output the first part of files
-- `tail`: output the last part of files
-- `more` and `less`: display contents of large files page by page or scroll line by line up and down
-- `wc`: print line, word, and byte counts for each each file
-- `grep`: print lines matching a pattern
-- `|`: pipe, i.e., `ls -la | head -n 100 >> new_file`
-
----
 
 # NGS data simulation using `wgsim`
 
@@ -74,8 +44,8 @@ Maize [reference genome](https://plants.ensembl.org/Zea_mays/Info/Index)
 #### Change to `largedata\lab4` folder:
 ```{bash, eval=FALSE}
 cd largedata
-mkdir lab4
-cd lab4
+mkdir hm1
+cd hm1
 ```
 
 
