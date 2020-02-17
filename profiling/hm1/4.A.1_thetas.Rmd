@@ -6,6 +6,11 @@ output: html_notebook
 ---
 
 
+```{r setup}
+# , include=TRUE, warning=FALSE, echo=TRUE, error=FALSE
+knitr::opts_knit$set(root.dir=normalizePath('../../'))
+knitr::opts_chunk$set(warning=FALSE, message=FALSE, error=FALSE, echo=TRUE)
+```
 
 
 # NGS data simulation using `wgsim`
@@ -60,23 +65,7 @@ gunzip Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa.gz
 
 ---
 
-# NGS data simulation using `wgsim`
 
-```{bash, eval=FALSE, echo=FALSE}
-cd largedata/
-mkdir lab4 # create a simulation dir
-cp ../data/lambda.fa lab4/ # copy the lambda reference genome
-cd lab4
-ls -l # now you should see a lambda.fa file
-```
-
-#### Type in the following command:
-
-```{bash, eval=FALSE}
-wgsim Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa \
--e 0 -d 500 -N 5000 -1 100 -2 100 -r 0.01  \
--R 0 -X 0 -S 1234567 l1.read1.fq l1.read2.fq
-```
 
 - Reference (about 500k)
   - `Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa`
@@ -96,7 +85,7 @@ wgsim Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa \
 ## simulate 10 individals
 
 ```{bash, eval=FALSE}
-for i in {1..10}
+for i in {1..20}
 do
    wgsim Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa -e 0 -d 500 -N 50000 -1 100 -2 100 -r 0.1  -R 0 -X 0 l$i.read1.fq l$i.read2.fq
 done
@@ -138,14 +127,14 @@ module load bwa samtools
 bwa index Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa
 # using bwa mem to align the reads to the reference genome 
 # => samtools to convert into bam file
-bwa mem Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa l1.read1.fq l1.read2.fq | samtools view -bSh - > l1.bam
+#bwa mem Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa l1.read1.fq l1.read2.fq | samtools view -bSh - > l1.bam
 ```
 
-#### Do alignment for 2 individuals using bash loop:
+#### Do alignment for 20 individuals using bash loop:
 
 ```{bash, eval=FALSE}
 # alignment
-for i in {1..2}; do bwa mem Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa l$i.read1.fq l$i.read2.fq | samtools view -bSh - > l$i.bam; done
+for i in {1..20}; do bwa mem Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa l$i.read1.fq l$i.read2.fq | samtools view -bSh - > l$i.bam; done
 # sort
 for i in *.bam; do samtools sort $i -o sorted_$i; done
 # index them
@@ -157,98 +146,6 @@ for i in sorted*.bam; do samtools index $i; done
 
 ```{bash, eval=FALSE}
 samtools flagstat sorted_l1.bam
-```
-
----
-
-# Submit a Slurm job
-
-- We wrap our jobs in little batch scripts, which is nice because these also help make steps reproducible. 
-
-- To keep your directory organized, I usually keep a scripts directory (i.e., `slurm-script/` ) and log dir (i.e., `slurm-log` )  for Slurm’s logs.
-  - Tip: use these logs, as these are very helpful in debugging. I separate them from my project because they fill up directories rather quickly.
-
---
-
-Let’s look at an example __slurm script header__ for a job called `theta` (which is run with script `theta.sh`).
-
-```{bash, eval=FALSE}
-#!/bin/bash -l
-#SBATCH -D ~projects/your-cool-project/
-#SBATCH -o ~/your-cool-project/slurm-log/steve-stdout-%j.txt
-#SBATCH -e ~/your-cool-project/slurm-log/steve-stderr-%j.txt
-#SBATCH -J steve
-#SBATCH -t 24:00:00
-set -e
-set -u
-
-# insert your script here
-```
-
-
----
-
-## An Example Slurm Batch Script Header
-
-```{bash, eval=FALSE}
-#!/bin/bash -l
-#SBATCH -D ~/projects/your-cool-project/
-#SBATCH -o ~/your-cool-project/slurm-log/steve-stdout-%j.txt
-#SBATCH -e ~/your-cool-project/slurm-log/steve-stderr-%j.txt
-#SBATCH -J theta
-#SBATCH -t 24:00:00
-#SBATCH --mail-user=your_email_address@gmail.com
-#SBATCH --mail-type=END #email if ends
-#SBATCH --mail-type=FAIL #email if fails
-set -e
-set -u
-
-# insert your script here
-```
-
-- `D` sets your project directory.
-- `o` sets where standard output (of your batch script) goes.
-- `e` sets where standard error (of your batch script) goes.
-- `J` sets the job name.
-- `t` sets the time limit for the job, 24:00:00 indicates 24 hours.
-- `--mail`: will email you if the job is "END" or "FAIL"
-
----
-
-## An Example Slurm Batch Script Header
-
-```{bash, eval=FALSE}
-cd slurm-script
-vi my_theta.sh
-i # insert text
-
-```
-
-- Copy the above header to a `.sh` file and make appropriate modifications
-
-- Insert the following:
-
-```{bash, eval=FALSE}
-# module load bwa samtools
-# cd largedata/lab4/
-
-# alignment
-for i in {1..2}; do bwa mem Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa l$i.read1.fq l$i.read2.fq | samtools view -bSh - > l$i.bam; done
-# sort
-for i in *.bam; do samtools sort $i -o sorted_$i; done
-# index them
-for i in sorted*.bam; do samtools index $i; done
-```
-
---
-
-- submit the job via `sbatch`:
-
-```{bash, eval=FALSE}
-sbatch --licenses=common --ntasks=1 --mem=5G slurm-script/my_theta.sh
-
-## check your job status
-squeue | grep "YOUR USER ID"
 ```
 
 
@@ -349,7 +246,7 @@ In local computer, using `R`:
 #### Barplot for SFS
 
 ```{r, eval=FALSE}
-s <- scan('../../cache/out.sfs')
+s <- scan('cache/out.sfs')
 s <- s[-c(1,length(s))]
 s <- s/sum(s)
 barplot(s,names=1:length(s), main='SFS')
@@ -358,8 +255,8 @@ barplot(s,names=1:length(s), main='SFS')
 #### Histgram distribution of the theta values
 
 ```{r, eval=FALSE}
-theta <- read.table("../../cache/theta.txt", header=TRUE)
-hist(t$Pairwise)
+theta <- fread("cache/theta.txt", data.table=FALSE)
+hist(theta$Pairwise)
 ```
 
 #### Scatter plot of the Fst values
@@ -396,11 +293,17 @@ Similarly, we will download and unzip the [Mt GFF3](ftp://ftp.ensemblgenomes.org
 # install.package("data.table")
 library("data.table")
 
-## simply read in wouldn't work
-gff <- fread("largedata/lab4/Zea_mays.B73_RefGen_v4.46.chromosome.Mt.gff3", skip="#", header=FALSE, data.table=FALSE)
 
+###only works under Unix system not windows
 ## grep -v means select lines that not matching any of the specified patterns
-gff <- fread(cmd='grep -v "#" largedata/lab4/Zea_mays.B73_RefGen_v4.46.chromosome.Mt.gff3', header=FALSE, data.table=FALSE)
+gff <- fread(cmd='grep -v "#" largedata/hm1/Zea_mays.B73_RefGen_v4.46.chromosome.Mt.gff3', header=FALSE, data.table=FALSE)
+
+fwrite(gff, "largedata/hm1/gff.txt", sep="\t", row.names=FALSE, quote=FALSE)
+
+###the output from Unix now can work for windows
+gff <- fread("largedata/hm1/gff.txt",  header=T, data.table=FALSE)
+
+
 ```
 
 ---
