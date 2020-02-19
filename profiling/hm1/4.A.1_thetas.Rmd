@@ -79,7 +79,7 @@ gunzip Zea_mays.B73_RefGen_v4.dna.chromosome.Mt.fa.gz
 
 # NGS data simulation using `wgsim`
 
-## simulate 10 individals
+## simulate 20 individals
 
 ```{bash, eval=FALSE}
 for i in {1..20}
@@ -243,6 +243,7 @@ In local computer, using `R`:
 #### Barplot for SFS
 
 ```{r, eval=FALSE}
+library(data.table)
 s <- scan('cache/out.sfs')
 s <- s[-c(1,length(s))]
 s <- s/sum(s)
@@ -253,7 +254,7 @@ barplot(s,names=1:length(s), main='SFS')
 
 ```{r, eval=FALSE}
 theta <- fread("cache/theta.txt", data.table=FALSE)
-hist(theta$Pairwise)
+hist(theta$Pairwise, main = "Pairwise Theta Distribution", xlab = "Log10(Pairwise_Theta)")
 ```
 
 #### Scatter plot of the Fst values
