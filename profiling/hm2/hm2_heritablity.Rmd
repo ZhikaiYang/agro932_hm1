@@ -1,0 +1,152 @@
+---
+title: "Calculate genetic variances"
+author: "Zhikai Yang"
+date: "April 1st, 2020"
+output: NULL
+---
+
+
+## Normalize the path:
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE) 
+knitr::opts_knit$set(root.dir=normalizePath('../../')) 
+```
+
+
+## Experimental design
+
+
+
+
+
+
+### Flint-Garcia et al., 2009 data
+
+
+
+```{r}
+f <- read.delim("data/journal.pone.0007433.s001.txt", header=TRUE)
+# Convert missing data to NA
+f[f=="."] <- NA
+
+
+# four environments
+table(f$Env)
+
+### Plant Yield
+
+f$INBRED <- as.factor(f$INBRED)
+f$Env <- as.factor(f$Env)
+
+#Hybrid
+# tricky part, be careful:
+f$PltYield_Hyb  <- as.numeric(as.character((f$PltYield_Hyb)))
+
+fit_pyh <- lm(f$PltYield_Hyb ~ INBRED + Env, data=f)
+anova(fit_pyh)
+
+#Inbred
+f$PltYield_Inbred  <- as.numeric(as.character((f$PltYield_Inbred)))
+
+fit_pyi <- lm(f$PltYield_Inbred ~ INBRED + Env, data=f)
+anova(fit_pyi)
+
+
+
+### Cob Weight
+#Hybrid
+f$CobWt_Hyb  <- as.numeric(as.character((f$CobWt_Hyb)))
+
+fit_cwh <- lm(CobWt_Hyb ~ INBRED + Env, data=f)
+anova(fit_cwh)
+
+#Inbred
+f$CobWt_Inbred  <- as.numeric(as.character((f$CobWt_Inbred)))
+
+fit_cwi <- lm(CobWt_Inbred ~ INBRED + Env, data=f)
+anova(fit_cwi)
+
+
+
+### Cob Dia
+#Hybrid
+f$CobDia_Hyb  <- as.numeric(as.character((f$CobDia_Hyb)))
+
+fit_cdh <- lm(CobDia_Hyb ~ INBRED + Env, data=f)
+anova(fit_cdh)
+
+#Inbred
+f$CobDia_Inbred  <- as.numeric(as.character((f$CobDia_Inbred)))
+
+fit_cdi <- lm(CobDia_Inbred ~ INBRED + Env, data=f)
+anova(fit_cdi)
+
+
+```
+
+$$
+H^2 = \frac{V_G}{V_P}
+$$
+With $(V_G =  MS(G) - MS(error)/re$ 
+
+```{r}
+##Hybrid
+Vg_pyh =  (2332 - 1210)/2 # here the environment just has 2 levels due to missing data in other 2 environments, thus r*e=1*2=2
+Vp_pyh = var(f$PltYield_Hyb, na.rm = TRUE)
+H2_pyh = Vg_pyh/Vp_pyh
+
+
+
+Vg_cwh =  (78.19 - 19.55)/4 
+Vp_cwh = var(f$CobWt_Hyb, na.rm = TRUE)
+H2_cwh = Vg_cwh/Vp_cwh
+
+
+Vg_cdh =  (9.661 - 1.925)/4 
+Vp_cdh = var(f$CobDia_Hyb, na.rm = TRUE)
+H2_cdh = Vg_cdh/Vp_cdh
+
+
+
+
+
+
+##Inbred
+Vg_pyi =  (549.08 - 358.99)/2 # here the environment just has 2 levels due to missing data in other 2 environments, thus r*e=1*2=2
+Vp_pyi = var(f$PltYield_Inbred, na.rm = TRUE)
+H2_pyi = Vg_pyi/Vp_pyi
+
+
+
+Vg_cwi =  (48.15- 14.05)/4 
+Vp_cwi = var(f$CobWt_Inbred, na.rm = TRUE)
+H2_cwi = Vg_cwi/Vp_cwi
+
+
+Vg_cdi =  (22.108  - 4.063)/4 
+Vp_cdi = var(f$CobDia_Inbred, na.rm = TRUE)
+H2_cdi = Vg_cdi/Vp_cdi
+
+```
+
+### Correlation between Heterosis and Heritablity
+```{r}
+H2_h <- c(H2_pyh, H2_cwh, H2_cdh)
+H2_i <- c(H2_pyi, H2_cwi, H2_cdi)
+
+#Heterosis value from Table 1 in Flint's paper
+AvgHBPH <- c(1.85, 0.66, 0.05)
+
+hh <- data.frame(H2_h = H2_h , H2_i = H2_i, AvgHBPH = AvgHBPH)
+
+#Hybrid
+cor.test(hh$H2_h, hh$AvgHBPH, method = "pearson")
+
+#Inbred
+cor.test(hh$H2_i, hh$AvgHBPH, method = "pearson")
+
+
+
+
+```
