@@ -137,8 +137,9 @@ H2_i <- c(H2_pyi, H2_cwi, H2_cdi)
 
 #Heterosis value from Table 1 in Flint's paper
 AvgHBPH <- c(1.85, 0.66, 0.05)
+Trait <- c("Plant Yield", "Cob Weight", "Cob Diameter")
 
-hh <- data.frame(H2_h = H2_h , H2_i = H2_i, AvgHBPH = AvgHBPH)
+hh <- data.frame(Trait = Trait ,H2_h = H2_h , H2_i = H2_i, AvgHBPH = AvgHBPH)
 
 #Hybrid
 cor.test(hh$H2_h, hh$AvgHBPH, method = "pearson")
@@ -148,5 +149,32 @@ cor.test(hh$H2_i, hh$AvgHBPH, method = "pearson")
 
 
 
+
+```
+
+### Visualization
+```{r}
+
+Hp <- data.frame(Trait = rep(hh$Trait, 2), H2 = c(H2_h, H2_i), HI = rep(c("Hybrid", "Inbred"), each =3), AvgHBPH = rep(AvgHBPH, 2))
+Hp$H2 <- round(Hp$H2, 4)
+
+library(ggplot2)
+ggplot(data=Hp, aes(x=Trait, y=H2, fill=HI)) +
+geom_bar(stat="identity", position=position_dodge())+
+  geom_text(aes(label=H2), vjust=1.6, color="white",
+            position = position_dodge(0.9), size=3.5)+
+  scale_fill_brewer(palette="Paired")+
+  theme_minimal()
+
+
+ggplot(data=hh, aes(x=Trait, y=AvgHBPH)) +
+  geom_bar(stat="identity", fill="green3")+
+  geom_text(aes(label=AvgHBPH), vjust=1.6, color="white", size=3.5)+
+  theme_minimal()
+
+
+ggplot(Hp, aes(x=H2, y=AvgHBPH, color=HI, shape=HI)) +
+  geom_point() + 
+  geom_smooth(method=lm, aes(fill=HI))
 
 ```
