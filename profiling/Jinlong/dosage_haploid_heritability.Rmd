@@ -1,0 +1,151 @@
+---
+title: "Calculate genetic variances"
+author: "Zhikai Yang"
+date: "April 1st, 2020"
+output: NULL
+---
+
+
+## Normalize the path:
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE) 
+knitr::opts_knit$set(root.dir=normalizePath('../../')) 
+```
+
+
+## Experimental design
+
+
+
+
+
+
+### Flint-Garcia et al., 2009 data
+
+
+
+```{r}
+f <- read.csv("largedata/jinlong/dosage.csv", header=TRUE)
+
+
+
+
+f$H1 <- as.factor(f$H1)
+f$H2 <- as.factor(f$H2)
+
+#Hybrid
+# tricky part, be careful:
+#f$PltYield_Hyb  <- as.numeric(as.character((f$PltYield_Hyb))
+
+dosage_ph<- lm(f$PH ~ H1 + H2 + H1*H2, data=f)
+anova(dosage_ph)
+
+
+```
+
+$$
+H^2 = \frac{V_G}{V_P}
+$$
+With $(V_G =  MS(G) - MS(error)/re$ 
+
+```{r}
+##Hybrid
+Vg_pyh =  (2332 - 1210)/2 # here the environment just has 2 levels due to missing data in other 2 environments, thus r*e=1*2=2
+Vp_pyh = var(f$PltYield_Hyb, na.rm = TRUE)
+H2_pyh = Vg_pyh/Vp_pyh
+
+
+
+Vg_cwh =  (78.19 - 19.55)/4 
+Vp_cwh = var(f$CobWt_Hyb, na.rm = TRUE)
+H2_cwh = Vg_cwh/Vp_cwh
+
+
+Vg_cdh =  (9.661 - 1.925)/4 
+Vp_cdh = var(f$CobDia_Hyb, na.rm = TRUE)
+H2_cdh = Vg_cdh/Vp_cdh
+
+
+
+
+
+
+##Inbred
+Vg_pyi =  (549.08 - 358.99)/2 # here the environment just has 2 levels due to missing data in other 2 environments, thus r*e=1*2=2
+Vp_pyi = var(f$PltYield_Inbred, na.rm = TRUE)
+H2_pyi = Vg_pyi/Vp_pyi
+
+
+
+Vg_cwi =  (48.15- 14.05)/4 
+Vp_cwi = var(f$CobWt_Inbred, na.rm = TRUE)
+H2_cwi = Vg_cwi/Vp_cwi
+
+
+Vg_cdi =  (22.108  - 4.063)/4 
+Vp_cdi = var(f$CobDia_Inbred, na.rm = TRUE)
+H2_cdi = Vg_cdi/Vp_cdi
+
+```
+
+
+## haploid heritability
+```{r}
+haploid <- read.csv("largedata/jinlong/haploid.csv", header=TRUE)
+
+
+haploid$P1 <- as.factor(haploid$P1)
+haploid$P2 <- as.factor(haploid$P2)
+haploid$env <- as.factor(haploid$env)
+
+haploid$hap_PH <- as.numeric(as.character((haploid$hap_PH)))
+
+A_hap <- matrix(0,nrow = nrow(haploid),ncol = nrow(haploid))
+
+ncom = 0
+
+haploid_O <- haploid
+
+haploid <- haploid[1:500,]
+
+for(i in 1:nrow(haploid)){
+  
+  for (j in 1:nrow(haploid)) {
+    
+    if(i==j){
+      A_hap[i,j] <-1
+    }else{
+      
+      ncom = (haploid[i,1]==haploid[j,1])+(haploid[i,1]==haploid[j,2])+(haploid[i,2]==haploid[j,1])+(haploid[i,2]==haploid[j,2])
+      if(ncom == 1){
+        A_hap[i,j]=0.25
+        
+      }else if(ncom==2){
+        
+        A_hap[i,j]=0.5
+        
+      }else if(ncom==0){
+        
+        A_hap[i,j]=0.0
+        
+      }
+      
+    }
+    
+    
+  }
+  
+  
+  
+  
+    #idxnsnps_i <- (e2m.sig[[i]]$coef != 0)
+    #snpsnames_i <- Znames[idxnsnps_i]
+    #med_snps <- data.frame(medi=rep(mednames[i], length(snpsnames_i)), snps_for_medi=snpsnames_i)
+    #output <- rbind(output, med_snps)
+}
+  #
+  
+
+```
+
