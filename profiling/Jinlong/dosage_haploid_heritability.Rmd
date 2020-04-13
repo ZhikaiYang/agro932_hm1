@@ -145,7 +145,22 @@ for(i in 1:nrow(haploid)){
     #output <- rbind(output, med_snps)
 }
   #
-  
+fwrite(A_hap, "largedata/jinlong/A_hap.csv", sep=",", row.names=FALSE, col.names = FALSE, quote=FALSE)
+
+A_hap_s <- fread("largedata/jinlong/A_hap.csv", header = FALSE, data.table=FALSE)
+A_hap_s <- as.matrix(A_hap_s)
 
 ```
+
+
+```{r}
+library(data.table)
+
+G_IN <- fread("largedata/jinlong/G_inb_matrix.txt", header=FALSE, data.table = FALSE)
+G_INBRED <- as.matrix(G_IN[,2:ncol(G_IN)])
+colnames(G_INBRED)<-G_IN$V1
+rownames(G_INBRED)<-G_IN$V1
+
+```
+
 
