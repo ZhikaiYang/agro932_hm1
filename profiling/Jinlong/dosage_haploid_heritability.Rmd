@@ -150,6 +150,16 @@ fwrite(A_hap, "largedata/jinlong/A_hap.csv", sep=",", row.names=FALSE, col.names
 A_hap_s <- fread("largedata/jinlong/A_hap.csv", header = FALSE, data.table=FALSE)
 A_hap_s <- as.matrix(A_hap_s)
 
+
+X_hap <- matrix(0,nrow = nrow(haploid_O), ncol = length(unique(haploid_O$env)))
+for (i in 1:nrow(haploid_O)){
+  if (haploid_O$env[i] == unique(haploid_O$env)[1] ){
+    X_hap[i,1]=1
+  }else if(haploid_O$env[i] == unique(haploid_O$env)[2]){
+     X_hap[i,2]=1
+  }
+}
+
 ```
 
 

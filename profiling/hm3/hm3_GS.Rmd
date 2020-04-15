@@ -13,8 +13,22 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir=normalizePath('../../')) 
 ```
 
+#2.Place the following system of equations in matrix form and solve it using R 
+#5 X1 + 6 X2 = 3
+#3 X1 -  4 X2 = -6
 
-# GBLUP vs. RR-BLUP
+
+```{r}
+A <- matrix(c(5,6,3,4), nrow = 2, byrow = T)
+Y <- matrix(c(3, -6), nrow = 2, byrow = T)
+X = solve(A) %*% Y
+
+#X1 = 24
+#X2 = -19.5
+```
+
+
+#3. GBLUP vs. RR-BLUP
 
 ### GBLUP
 
@@ -114,7 +128,7 @@ y <- pheno$Derregressed_BV
 y <- matrix(y, ncol=1)
 
 # markers 
-geno <- geno[,-1] # 861 x 4853
+geno <- geno[,-1] # 925 x 4853
 geno[geno == -9] <- NA
 ```
 
@@ -220,7 +234,7 @@ Set up mixed model equations (MME) by fitting the model:
 Directly take the inverse of LHS to obtain the solutions for GBLUP. Report the estimates of intercept and additive genetic values. Use $\lambda = 1.35$. 
 
 ```{r, eval=FALSE, echo=TRUE}
-lambda <- 1.35 # fit$Ve / fit$Vm
+lambda <- 4.087116 # fit$Ve / fit$Vm
 Ginv <- solve(G)
 ones <- matrix(1, ncol=1, nrow=n)
 Z <- diag(n)
@@ -291,7 +305,7 @@ Directly take the inverse of LHS to obtain the solutions for marker-based GBLUP 
 --
 
 ```{r, eval=FALSE, echo=TRUE}
-lambda <- 4326.212 # fit$Ve / fit$Vu
+lambda <- 12566.89 # fit$Ve / fit$Vu
 ones <- matrix(1, ncol=1, nrow=n)
 I <- diag(m)
 LHS1 <- cbind(crossprod(ones), crossprod(ones, Zs)) 
@@ -339,23 +353,43 @@ Repeat GBLUP but treat the first 600 individuals as a training set and predict t
 - What is the predictive correlation in the testing set? Use $\lambda = 1.348411$. 
 
 ```{r, eval=FALSE, echo=TRUE}
-n.trn <- 600
-n.tst <- 261
-y.trn <- y[1:n.trn]
-y.tst <- y[n.trn+1:n.tst]
-Zs.trn <- Zs[1:n.trn,]
-Zs.tst <- Zs[n.trn+1:n.tst,]
+
+K = 10
+d = round(n/K)
+set.seed(0)
+i.mix = sample(1:n)
+folds = vector(mode="list",length=K)
+
+for (k in 1:K) {
+  folds[[k]] = i.mix[((k-1)*d+1):(k*d)]
+}
+
+p_K10_G <- rep(0.0, 10)
+
+for (k in 1:K) {
+cat("Fold",k,"\n")
+
+i.trn = unlist(folds[-k])
+i.tst = folds[[k]]
+
+
+y.trn = y[i.trn]    # training responses
+
+y.tst = y[i.tst]    # testing responses
+
+Zs.trn <- Zs[i.trn,]
+Zs.tst <- Zs[i.tst,]
 
 Gtrn <- tcrossprod(Zs.trn) / ncol(Zs.trn)
-Gtrn <- Gtrn + diag(n.trn)*0.001
+Gtrn <- Gtrn + diag(length(y.trn))*0.001
 Gtst.trn <- tcrossprod(Zs.tst, Zs.trn) / ncol(Zs.tst)
 #Gtrn <- G[1:n.trn, 1:n.trn]
 #Gtst.trn <- G[n.trn+1:n.tst, 1:n.trn]
 
-lambda <- 1.348411 # fit$Ve / fit$Vu
+lambda <- 4.087116 # fit$Ve / fit$Vu
 Ginv.trn <- solve(Gtrn)
-ones <- matrix(1, ncol=1, nrow=n.trn)
-Z <- diag(n.trn)
+ones <- matrix(1, ncol=1, nrow=length(y.trn))
+Z <- diag(length(y.trn))
 LHS1 <- cbind(crossprod(ones), crossprod(ones, Z)) 
 LHS2 <- cbind(crossprod(Z, ones), crossprod(Z) +  Ginv.trn*lambda)
 LHS <- rbind(LHS1, LHS2)
@@ -363,8 +397,13 @@ RHS <- rbind( crossprod(ones, y.trn), crossprod(Z,y.trn) )
 sol.trn <- solve(LHS, RHS)
 
 # prediction
-y.hat <- Gtst.trn %*% Ginv.trn %*% matrix(sol.trn[c(2:(n.trn+1))])
-cor(y.hat, y[(n.trn+1):n])
+y.hat <- Gtst.trn %*% Ginv.trn %*% matrix(sol.trn[c(2:(length(y.trn)+1))])
+p_K10_G[k] <- cor(y.hat, y.tst)
+
+}
+
+
+
 # plot(y.hat, y[(n.trn+1):n])
 ```
 
@@ -377,10 +416,36 @@ Repeat RR-BLUP but treat the first 600 individuals as a training set and predict
 - Also, compare this predictive correlation to the one from GBLUP. 
 
 ```{r, eval=FALSE, echo=TRUE}
-Zs.trn <- Zs[1:n.trn, ]
-Zs.tst <- Zs[n.trn+1:n.tst, ]
-lambda <- 4326.212 # fit$Ve / fit$Vu
-ones <- matrix(1, ncol=1, nrow=n.trn)
+
+K = 10
+d = round(n/K)
+set.seed(0)
+i.mix = sample(1:n)
+folds = vector(mode="list",length=K)
+
+for (k in 1:K) {
+  folds[[k]] = i.mix[((k-1)*d+1):(k*d)]
+}
+
+p_K10_rr <- rep(0.0, 10)
+
+for (k in 1:K) {
+cat("Fold",k,"\n")
+
+i.trn = unlist(folds[-k])
+i.tst = folds[[k]]
+
+
+y.trn = y[i.trn]    # training responses
+
+y.tst = y[i.tst]    # testing responses
+
+Zs.trn <- Zs[i.trn,]
+Zs.tst <- Zs[i.tst,]
+
+
+lambda <- 12566.89 # fit$Ve / fit$Vu
+ones <- matrix(1, ncol=1, nrow=length(y.trn))
 I <- diag(m)
 LHS1 <- cbind(crossprod(ones), crossprod(ones, Zs.trn)) 
 LHS2 <- cbind(crossprod(Zs.trn, ones), crossprod(Zs.trn) +  I*lambda)
@@ -390,6 +455,30 @@ sol.trn <- solve(LHS, RHS)
 
 # prediction
 y.hat2 <- Zs.tst %*% matrix(sol.trn[-1])
-# cor(y.hat2, y[(n.trn+1):n])
+p_K10_rr[k] <- cor(y.hat2, y.tst)
+
+}
+
+
+
+
+
+
 # plot(y.hat2, y[(n.trn+1):n])
 ```
+
+
+###Visualization
+```{r}
+library(ggplot2)
+
+p_K10 <- data.frame(accuracy= c(p_K10_G, p_K10_rr), Method = c(rep("GBLUP", 10), rep("rrBLUP", 10))  )
+
+dp <- ggplot(p_K10, aes(x=Method, y=accuracy, fill=Method)) + 
+  geom_violin(trim=FALSE)+
+  geom_boxplot(width=0.1, fill="white")+
+  labs(title="Plot of Predication Accuracy by Methods",x="Mthod", y = "Predication Accuracy")
+dp + theme_classic()
+
+```
+
